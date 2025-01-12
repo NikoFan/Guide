@@ -4,34 +4,30 @@ from PySide6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
     QHBoxLayout,
-    QWidget,
-    QTextEdit,
-    QSplitter)
+    QWidget)
 
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QIcon
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QPixmap
 
-from PySide6 import QtCore, QtGui
-
-from VIEW.widgets_dir import ListWidget
+from VIEW.widgets_dir import ListWidget, Toggle
 
 
 class MainFrame(QFrame):
-    def __init__(self, model, terminal_text="/", path="/", parent=None, user_name=None):
+    def __init__(self, model, path="/", parent=None, user_name=None):
         super().__init__(parent)
         self._model = model
         self._path = path
         self._user_name = user_name
-        self._model.get_files(self._path)
+        self.theme_bool = parent.theme_bool
+
+        # Создание разметки
         self.frame_layout = QHBoxLayout(self)
         self.frame_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.fill_frame()
 
-
-
     def fill_frame(self):
         '''
-        Функция заполнения фрейма вилдетами
+        Функция заполнения фрейма виджетами
         :return: None
         '''
 
@@ -42,7 +38,6 @@ class MainFrame(QFrame):
         self.left_vertical_side_vbox.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Fill
-
         self.fill_left_widget()
         left_side.setFixedHeight(self.left_vertical_side_vbox.count() * 55)
         left_side.setFixedWidth(250)
@@ -55,7 +50,6 @@ class MainFrame(QFrame):
         self.fill_central_widget()
 
         self.frame_layout.addWidget(central_side)
-
 
     def fill_central_widget(self):
         '''
@@ -72,10 +66,11 @@ class MainFrame(QFrame):
 
             # Создание области для хранения объектов
             object_button = QPushButton()
+            object_button.setObjectName("object_button")
             object_button.setFixedSize(QSize(100, 100))
-            object_button.setAccessibleName(self._path + data["text"])
+            object_button.setAccessibleName(data["type"] + ";" + self._path + "/" + data["text"])
             object_button.clicked.connect(
-                self._model.open_file
+                self._model.detect_object_type
             )
 
             # Создание лейбла под фото
@@ -91,8 +86,8 @@ class MainFrame(QFrame):
             icon_hbox.addWidget(QWidget())
 
             # Создание виджета с названием
-            file_name = QLabel(data["text"])
-            file_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            file_name = QLabel(data["text"][:8] + "...")
+            file_name.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
 
             # Добавление виджетов в разметку
             layout = QVBoxLayout(object_button)
@@ -105,6 +100,15 @@ class MainFrame(QFrame):
             item.setSizeHint(object_button.sizeHint())
             adaptive_view.setItemWidget(item, object_button)
 
+        back_btn = QPushButton("Прошлая папка")
+        back_btn.setFixedHeight(30)
+        back_btn.setObjectName("back_btn")
+        back_btn.clicked.connect(
+            lambda: self._model.open_back_dir()
+        )
+
+        self.central_side_vbox.addWidget(QLabel(self._path, objectName="currentPath"))
+        self.central_side_vbox.addWidget(back_btn)
 
     def fill_left_widget(self):
         '''
@@ -124,14 +128,37 @@ class MainFrame(QFrame):
             btn.setObjectName("left_side_btn")
             btn.setFixedHeight(40)
             btn.clicked.connect(
-                lambda: (self._model.open_dir(data["_path"])))
+                lambda: (self._model.open_dir_from_side_btn(data["_path"])))
             return btn
 
-        buttons_data = [{"text":"Desktop",
-                         "_path":""f'/home/{self._user_name}/Desktop/'},
-                        {"text": "Documents",
-                         "_path": ""f'/home/{self._user_name}/Documents/'},
-                        {"text": "Downloads",
-                         "_path": ""f'/home/{self._user_name}/Downloads/'}                        ]
+        buttons_data = [
+            {"text": "Desktop",
+             "_path": ""f'/home/{self._user_name}/Desktop'},
+            {"text": "Documents",
+             "_path": ""f'/home/{self._user_name}/Documents'},
+            {"text": "Downloads",
+             "_path": ""f'/home/{self._user_name}/Downloads'},
+            {"text": "Music",
+             "_path": ""f'/home/{self._user_name}/Music'},
+            {"text": "Pictures",
+             "_path": ""f'/home/{self._user_name}/Pictures'},
+            {"text": "Videos",
+             "_path": ""f'/home/{self._user_name}/Videos'},
+            {"text": "Trash",
+             "_path": ""f'/home/{self._user_name}/Trash'},
+        ]
+
+        self.left_vertical_side_vbox.addWidget(QLabel("Переключить тему", objectName="theme_change_label"))
+
+        # Создание переключателя для темы
+        toggle = Toggle.Toggle().return_toggle()
+        if not self.theme_bool:  # Если до этого тема была изменена - Оставить тумблер на месте
+            toggle.setChecked(True)
+
+        # Считывание переключения тумблера
+        toggle.stateChanged.connect(self._model.change_theme)
+        self.left_vertical_side_vbox.addWidget(toggle)  # Добавление тумблера на экран
+
+        # Создание кнопок левой панели
         for button_data in buttons_data:
             self.left_vertical_side_vbox.addWidget(create_btn_pattern(button_data))

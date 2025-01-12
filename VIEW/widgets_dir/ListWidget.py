@@ -3,9 +3,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem)
 
 
-
-
-
 class FlowContainer(QListWidget):
     def __init__(self):
         super().__init__()
@@ -19,8 +16,6 @@ class FlowContainer(QListWidget):
         self.setHorizontalScrollMode(self.ScrollMode.ScrollPerPixel)
         self.setVerticalScrollMode(self.ScrollMode.ScrollPerPixel)
         self.setSpacing(50)
-
-
 
     def create_item(self):
         return QListWidgetItem()

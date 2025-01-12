@@ -7,6 +7,9 @@ import os
 
 from VIEW import MainFrame
 from VIEW_MODEL import MainFrame_viewModel
+from MODEL import Stack
+import styles
+
 
 class Main(QMainWindow):
     def __init__(self):
@@ -15,15 +18,28 @@ class Main(QMainWindow):
         self.setMinimumSize(QSize(500, 400))
 
         self.user_name: str = self.take_current_user_name()
+        Stack.Stack.push(f"/home/{self.user_name}/Desktop")
 
         # Объявление Представления и Посредника
+        self.theme_bool = True
         main_frame_view_model = MainFrame_viewModel.MainFrameViewModel(parent=self)
-        main_frame_view = MainFrame.MainFrame(path=f"/home/{self.user_name}/Desktop/",
+        main_frame_view = MainFrame.MainFrame(path=f"/home/{self.user_name}/Desktop",
                                               model=main_frame_view_model.model(),
+                                              parent=self,
                                               user_name=self.user_name)
 
-
+        self.setStyleSheet(styles.styles_dict["light"])
         self.setCentralWidget(main_frame_view)
+
+    def change_app_theme(self):
+        ''' Смена темы '''
+        if self.theme_bool:
+            self.setStyleSheet(styles.styles_dict["dark"])
+            self.theme_bool = False
+            return
+        self.setStyleSheet(styles.styles_dict["light"])
+        self.theme_bool = True
+        return
 
     def take_current_user_name(self):
         '''
@@ -35,47 +51,25 @@ class Main(QMainWindow):
     def change_dir(self, path: str):
         '''
         Функция смены папки
-        :param terminal_text: Стартовый текст в теримнале
         :param path: Путь до папки
         :return: None
         '''
 
+        print("stack:", Stack.Stack.get_path())
+
         main_frame_view_model = MainFrame_viewModel.MainFrameViewModel(parent=self)
         main_frame_view = MainFrame.MainFrame(path=path,
+                                              parent=self,
                                               model=main_frame_view_model.model(),
                                               user_name=self.user_name)
 
         self.setCentralWidget(main_frame_view)
 
 
-
-styles = """
-QScrollArea {
-background: #f0f0f0;
-color: #000000;
-}
-
-#asdas {
-background: 'red';
-}
-
-
-QTextEdit {
-background: #000000;
-font-style: Ubuntu;
-font-size: 18px;
-}
-"""
-
 if __name__ == "__main__":
     application = QApplication(sys.argv)
-    application.setStyleSheet(styles)
 
     main = Main()
     main.show()
 
     sys.exit(application.exec())
-
-
-
-
